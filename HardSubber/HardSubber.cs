@@ -10,7 +10,7 @@ namespace HardSubber
 {
 	public static class HardSubber
 	{
-		private const string VERSION = "1.0.0";
+		private const string VERSION = "1.0.1";
 
 		private static readonly string[] supportedVideoFormats =
 		{
@@ -168,6 +168,7 @@ namespace HardSubber
 		private static void hardsubFile(FileInfo file, string output, int subIndex, int audioIndex, bool picture)
 		{
 			Log.ConsoleWrite("Hardsubbing file " + file.Name, ELogType.Message);
+			Log.ConsoleWrite("", ELogType.Message);
 			
 			var process = new Process
 			{
@@ -217,8 +218,6 @@ namespace HardSubber
 			process.StartInfo.Arguments += subMap;
 			process.StartInfo.Arguments += audioMap + "-c:a copy ";
 			process.StartInfo.Arguments += $"\"{output}/{file.Name}\"";
-			
-			Log.ConsoleWrite("Running ffmpeg with: " + process.StartInfo.Arguments, ELogType.Message);
 			
 			process.Start();
 			process.WaitForExit();
