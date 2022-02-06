@@ -40,6 +40,9 @@ namespace HardSubber
 				case "--hardsub":
 					await processHardsub(args);
 					break;
+				case "--fix":
+					await processFix(args);
+					break;
 				default:
 					Log.PrintHelp();
 					break;
@@ -165,6 +168,98 @@ namespace HardSubber
 			}
 		}
 		
+		private static async Task processFix(string[] args)
+		{
+			ffmpegPath = await getFFmpegPath();
+			if (string.IsNullOrEmpty(ffmpegPath))
+			{
+				Log.ConsoleWrite("ffmpeg was not found", ELogType.Error);
+				return;
+			}
+
+			Log.ConsoleWrite("ffmpeg found at: " + ffmpegPath, ELogType.Message);
+
+			var inputPath = "";
+			var outputPath = "";
+
+			for (var i = 0; i < args.Length; i++)
+			{
+				if (args[i].Length < 2)
+					continue;
+				
+				switch (args[i].Substring(2))
+				{
+					case "path" when args.Length < i + 1:
+						Log.ConsoleWrite("No input path provided", ELogType.Error);
+						return;
+					case "path":
+						inputPath = args[i + 1];
+						break;
+					case "output" when args.Length < i + 1:
+						Log.ConsoleWrite("No output path provided", ELogType.Error);
+						return;
+					case "output":
+						outputPath = args[i + 1];
+						break;
+				}
+			}
+
+			if (inputPath == "")
+			{
+				Log.ConsoleWrite("No input path provided", ELogType.Error);
+				return;
+			}
+			
+			if (outputPath == "")
+				Log.ConsoleWrite("No output path provided", ELogType.Warning);
+
+			var attributes = File.GetAttributes(inputPath);
+			if (attributes == FileAttributes.Directory)
+			{
+				if (outputPath == "")
+					outputPath = inputPath + "/fixed";
+
+				if (!Directory.Exists(outputPath))
+					Directory.CreateDirectory(outputPath);
+
+				var files = Directory.GetFiles(inputPath);
+				if (files == null || files.Length == 0)
+				{
+					Log.ConsoleWrite("No files found in provided input path", ELogType.Error);
+					return;
+				}
+
+				foreach (var filePath in files)
+				{
+					var file = new FileInfo(filePath);
+					if (!supportedVideoFormats.Contains(file.Extension))
+					{
+						Log.ConsoleWrite("File " + file.Name + " skipped because the video format (" + file.Extension + ") is not supported", ELogType.Error);
+						continue;
+					}
+
+					fixFile(file, outputPath);
+				}
+			}
+			else if (attributes == FileAttributes.Normal)
+			{
+				var file = new FileInfo(inputPath);
+				if (!supportedVideoFormats.Contains(file.Extension))
+				{
+					Log.ConsoleWrite("Unsupported video format (" + file.Extension + ")", ELogType.Error);
+					return;
+				}
+				
+				if (outputPath == "")
+					outputPath = file.DirectoryName + "/subbed";
+
+				if (!Directory.Exists(outputPath))
+					Directory.CreateDirectory(outputPath);
+				
+				fixFile(file, outputPath);
+			}
+		}
+		
 		private static void hardsubFile(FileInfo file, string output, int subIndex, int audioIndex, bool picture)
 		{
 			Log.ConsoleWrite("Hardsubbing file " + file.Name, ELogType.Message);
@@ -192,31 +287,43 @@ namespace HardSubber
 			
 			if (picture)
 			{
-				if (subIndex != -1)
-				{
-					subMap = $"-filter_complex \"[0:v][0:s:{subIndex}]overlay[v]\" -map \"[v]\" ";
-				}
-				else
-				{
-					subMap = $"-filter_complex \"[0:v][0:s]overlay[v]\" -map \"[v]\" ";
-				}
+				subMap = subIndex != -1 ? $"-filter_complex \"[0:v][0:s:{subIndex}]overlay[v]\" -map \"[v]\" " : $"-filter_complex \"[0:v][0:s]overlay[v]\" -map \"[v]\" ";
 			}
 			else
 			{
-				if (subIndex != -1)
-				{
-					subMap = $"-filter_complex \"subtitles='{file.FullName}':stream_index={subIndex}\" ";
-				}
-				else
-				{
-					subMap = $"-filter_complex \"subtitles='{file.FullName}'\" ";
-				}
+				subMap = subIndex != -1 ? $"-filter_complex \"subtitles='{file.FullName}':stream_index={subIndex}\" " : $"-filter_complex \"subtitles='{file.FullName}'\" ";
 			}
 
 			process.StartInfo.Arguments += $"-hide_banner -loglevel warning -stats ";
 			process.StartInfo.Arguments += $"-i \"{file.FullName}\" ";
 			process.StartInfo.Arguments += subMap;
 			process.StartInfo.Arguments += audioMap + "-c:a copy ";
+			process.StartInfo.Arguments += $"\"{output}/{file.Name}\"";
+			
+			process.Start();
+			process.WaitForExit();
+		}
+		
+		private static void fixFile(FileInfo file, string output)
+		{
+			Log.ConsoleWrite("Fixing file " + file.Name, ELogType.Message);
+			Log.ConsoleWrite("", ELogType.Message);
+			
+			var process = new Process
+			{
+				StartInfo = new ProcessStartInfo
+				{
+					FileName = ffmpegPath,
+					Arguments = "",
+					UseShellExecute = false, 
+					RedirectStandardOutput = false,
+					CreateNoWindow = true
+				}
+			};
+
+			process.StartInfo.Arguments += $"-hide_banner -loglevel warning -stats ";
+			process.StartInfo.Arguments += $"-i \"{file.FullName}\" ";
+			process.StartInfo.Arguments += "-c copy ";
 			process.StartInfo.Arguments += $"\"{output}/{file.Name}\"";
 			
 			process.Start();
