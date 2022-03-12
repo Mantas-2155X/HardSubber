@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -137,16 +138,23 @@ namespace HardSubber
 					return;
 				}
 
-				foreach (var filePath in files)
+				var workers = Environment.ProcessorCount / 4;
+				var workersFiles = files.Split(workers + 1);
+				
+				foreach (var workerFiles in workersFiles)
 				{
-					var file = new FileInfo(filePath);
-					if (!supportedVideoFormats.Contains(file.Extension))
+					Parallel.ForEach(workerFiles, s =>
 					{
-						Log.ConsoleWrite("File " + file.Name + " skipped because the video format (" + file.Extension + ") is not supported", ELogType.Error);
-						continue;
-					}
-
-					hardsubFile(file, outputPath, subStream, audioStream, picture);
+						var file = new FileInfo(s);
+						if (!supportedVideoFormats.Contains(file.Extension))
+						{
+							Log.ConsoleWrite("File " + file.Name + " skipped because the video format (" + file.Extension + ") is not supported", ELogType.Error);
+						}
+						else
+						{
+							hardsubFile(file, outputPath, subStream, audioStream, picture);
+						}
+					});
 				}
 			}
 			else if (attributes == FileAttributes.Normal)
@@ -166,6 +174,8 @@ namespace HardSubber
 				
 				hardsubFile(file, outputPath, subStream, audioStream, picture);
 			}
+			
+			await Task.Delay(-1);
 		}
 		
 		private static async Task processFix(string[] args)
