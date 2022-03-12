@@ -287,17 +287,23 @@ namespace HardSubber
 			
 			if (picture)
 			{
-				subMap = subIndex != -1 ? $"-filter_complex \"[0:v][0:s:{subIndex}]overlay[v]\" -map \"[v]\" " : $"-filter_complex \"[0:v][0:s]overlay[v]\" -map \"[v]\" ";
+				subMap = subIndex != -1 ? 
+					$"-filter_complex \"[0:v][0:s:{subIndex}]overlay[v], format=nv12,hwupload\" -map \"[v]\" " : 
+					$"-filter_complex \"[0:v][0:s]overlay[v], format=nv12,hwupload\" -map \"[v]\" ";
 			}
 			else
 			{
-				subMap = subIndex != -1 ? $"-filter_complex \"subtitles='{file.FullName}':stream_index={subIndex}\" " : $"-filter_complex \"subtitles='{file.FullName}'\" ";
+				subMap = subIndex != -1 ? 
+					$"-filter_complex \"subtitles='{file.FullName}':stream_index={subIndex}, format=nv12,hwupload\" " : 
+					$"-filter_complex \"subtitles='{file.FullName}', format=nv12,hwupload\" ";
 			}
-
+			
 			process.StartInfo.Arguments += $"-hide_banner -loglevel warning -stats ";
+			process.StartInfo.Arguments += $"-vaapi_device /dev/dri/renderD128 ";
 			process.StartInfo.Arguments += $"-i \"{file.FullName}\" ";
 			process.StartInfo.Arguments += subMap;
 			process.StartInfo.Arguments += audioMap + "-c:a copy ";
+			process.StartInfo.Arguments += "-c:v hevc_vaapi ";
 			process.StartInfo.Arguments += "-movflags faststart ";
 			process.StartInfo.Arguments += $"\"{output}/{file.Name}\".mp4";
 			
