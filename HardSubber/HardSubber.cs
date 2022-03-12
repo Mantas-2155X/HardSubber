@@ -298,7 +298,8 @@ namespace HardSubber
 			process.StartInfo.Arguments += $"-i \"{file.FullName}\" ";
 			process.StartInfo.Arguments += subMap;
 			process.StartInfo.Arguments += audioMap + "-c:a copy ";
-			process.StartInfo.Arguments += $"\"{output}/{file.Name}\"";
+			process.StartInfo.Arguments += "-movflags faststart ";
+			process.StartInfo.Arguments += $"\"{output}/{file.Name}\".mp4";
 			
 			process.Start();
 			process.WaitForExit();
