@@ -174,8 +174,6 @@ namespace HardSubber
 				
 				hardsubFile(file, outputPath, subStream, audioStream, picture);
 			}
-			
-			await Task.Delay(-1);
 		}
 		
 		private static async Task processFix(string[] args)
@@ -313,8 +311,9 @@ namespace HardSubber
 			process.StartInfo.Arguments += $"-i \"{file.FullName}\" ";
 			process.StartInfo.Arguments += subMap;
 			process.StartInfo.Arguments += audioMap + "-c:a copy ";
-			process.StartInfo.Arguments += "-c:v hevc_vaapi ";
+			process.StartInfo.Arguments += "-c:v h264_vaapi ";
 			process.StartInfo.Arguments += "-movflags faststart ";
+			process.StartInfo.Arguments += "-strict -2 ";
 			process.StartInfo.Arguments += $"\"{output}/{file.Name}\".mp4";
 			
 			process.Start();
