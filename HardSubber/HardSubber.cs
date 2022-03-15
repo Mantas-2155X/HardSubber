@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -104,6 +103,12 @@ namespace HardSubber
 					case "picture":
 						picture = true;
 						break;
+					case "zenity":
+						var options = Tools.GetZenityOptions();
+						subStream = options[0];
+						audioStream = options[1];
+						picture = Convert.ToBoolean(options[2]);
+						break;
 				}
 			}
 
@@ -174,6 +179,10 @@ namespace HardSubber
 				
 				hardsubFile(file, outputPath, subStream, audioStream, picture);
 			}
+
+			Log.ConsoleWrite("Finished HardSubbing", ELogType.Message);
+			
+			await Task.Delay(-1);
 		}
 		
 		private static async Task processFix(string[] args)
@@ -292,12 +301,16 @@ namespace HardSubber
 			}
 
 			string subMap;
+
+			var newName = file.FullName.Replace("'", "");
+			if (newName != file.FullName)
+				file.MoveTo(newName);
 			
 			if (picture)
 			{
 				subMap = subIndex != -1 ? 
-					$"-filter_complex \"[0:v][0:s:{subIndex}]overlay[v], format=nv12,hwupload\" -map \"[v]\" " : 
-					$"-filter_complex \"[0:v][0:s]overlay[v], format=nv12,hwupload\" -map \"[v]\" ";
+					$"-filter_complex \"[0:v][0:s:{subIndex}]overlay[v]\" -map \"[v]\" " : 
+					$"-filter_complex \"[0:v][0:s]overlay[v]\" -map \"[v]\" ";
 			}
 			else
 			{
@@ -310,11 +323,14 @@ namespace HardSubber
 			process.StartInfo.Arguments += $"-vaapi_device /dev/dri/renderD128 ";
 			process.StartInfo.Arguments += $"-i \"{file.FullName}\" ";
 			process.StartInfo.Arguments += subMap;
-			process.StartInfo.Arguments += audioMap + "-c:a copy ";
-			process.StartInfo.Arguments += "-c:v h264_vaapi ";
+			process.StartInfo.Arguments += audioMap + "-c:a aac ";
+			
+			if (!picture) 
+				process.StartInfo.Arguments += "-c:v h264_vaapi ";
+			
 			process.StartInfo.Arguments += "-movflags faststart ";
 			process.StartInfo.Arguments += "-strict -2 ";
-			process.StartInfo.Arguments += $"\"{output}/{file.Name}\".mp4";
+			process.StartInfo.Arguments += $"\"{output}/{file.Name.Substring(0, file.Name.Length - file.Extension.Length)}\".mp4";
 			
 			process.Start();
 			process.WaitForExit();

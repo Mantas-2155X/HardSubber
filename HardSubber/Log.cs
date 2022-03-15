@@ -36,8 +36,9 @@ namespace HardSubber
 			ConsoleWrite("		--path			# Video input path. File or directory", ELogType.Message);
 			ConsoleWrite("		--output		# Video output path. Optional, directory", ELogType.Message);
 			ConsoleWrite("		--substream		# Subtitle stream index. Optional, number", ELogType.Message);
-			ConsoleWrite("		--audiostream		# Audio stream index. Optional, number", ELogType.Message);
+			ConsoleWrite("		--audiostream	# Audio stream index. Optional, number", ELogType.Message);
 			ConsoleWrite("		--picture		# Use picture based subtitles. Optional", ELogType.Message);
+			ConsoleWrite("		--zenity		# Use zenity to pick stream indexes. Optional", ELogType.Message);
 		}
 	}
 }
