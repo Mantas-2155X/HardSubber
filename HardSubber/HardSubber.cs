@@ -143,6 +143,8 @@ namespace HardSubber
 					return;
 				}
 
+				files = files.OrderBy(f => f).ToArray();
+				
 				var workers = Environment.ProcessorCount / 4;
 				var workersFiles = files.Split(workers + 1);
 				
@@ -305,6 +307,8 @@ namespace HardSubber
 			var newName = file.FullName.Replace("'", "");
 			if (newName != file.FullName)
 				file.MoveTo(newName);
+
+			var shortName = file.Name.Substring(0, file.Name.Length - file.Extension.Length);
 			
 			if (picture)
 			{
@@ -328,9 +332,10 @@ namespace HardSubber
 			if (!picture) 
 				process.StartInfo.Arguments += "-c:v h264_vaapi ";
 			
+			process.StartInfo.Arguments += "-metadata title=\"" + shortName + "\" ";
 			process.StartInfo.Arguments += "-movflags faststart ";
 			process.StartInfo.Arguments += "-strict -2 ";
-			process.StartInfo.Arguments += $"\"{output}/{file.Name.Substring(0, file.Name.Length - file.Extension.Length)}\".mp4";
+			process.StartInfo.Arguments += $"\"{output}/{shortName}\".mp4";
 			
 			process.Start();
 			process.WaitForExit();
