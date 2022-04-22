@@ -20,6 +20,7 @@ namespace HardSubber
 		};
 
 		private static string ffmpegPath;
+		public static string zenityPath;
 		
 		public static async Task Start(string[] args)
 		{
@@ -29,6 +30,17 @@ namespace HardSubber
 				return;
 			}
 
+			zenityPath = await getPath("zenity");
+			ffmpegPath = await getPath("ffmpeg");
+			if (string.IsNullOrEmpty(ffmpegPath))
+			{
+				Log.ConsoleWrite("ffmpeg was not found", ELogType.Error);
+				return;
+			}
+
+			Log.ConsoleWrite("ffmpeg found at: " + ffmpegPath, ELogType.Message);
+
+			
 			switch (args[0])
 			{
 				case "--version":
@@ -54,15 +66,6 @@ namespace HardSubber
 		
 		private static async Task processHardsub(string[] args)
 		{
-			ffmpegPath = await getFFmpegPath();
-			if (string.IsNullOrEmpty(ffmpegPath))
-			{
-				Log.ConsoleWrite("ffmpeg was not found", ELogType.Error);
-				return;
-			}
-
-			Log.ConsoleWrite("ffmpeg found at: " + ffmpegPath, ELogType.Message);
-
 			var inputPath = "";
 			var outputPath = "";
 			var subStream = -1;
@@ -189,15 +192,6 @@ namespace HardSubber
 		
 		private static async Task processFix(string[] args)
 		{
-			ffmpegPath = await getFFmpegPath();
-			if (string.IsNullOrEmpty(ffmpegPath))
-			{
-				Log.ConsoleWrite("ffmpeg was not found", ELogType.Error);
-				return;
-			}
-
-			Log.ConsoleWrite("ffmpeg found at: " + ffmpegPath, ELogType.Message);
-
 			var inputPath = "";
 			var outputPath = "";
 
@@ -332,6 +326,8 @@ namespace HardSubber
 			if (!picture) 
 				process.StartInfo.Arguments += "-c:v h264_vaapi ";
 			
+			process.StartInfo.Arguments += "-qp 22 ";
+			process.StartInfo.Arguments += "-color_primaries unknown -color_trc unknown -colorspace unknown ";
 			process.StartInfo.Arguments += "-metadata title=\"" + shortName + "\" ";
 			process.StartInfo.Arguments += "-movflags faststart ";
 			process.StartInfo.Arguments += "-strict -2 ";
@@ -367,13 +363,13 @@ namespace HardSubber
 			process.WaitForExit();
 		}
 
-		private static async Task<string> getFFmpegPath()
+		private static async Task<string> getPath(string app)
 		{
 			var process = new Process
 			{
 				StartInfo = new ProcessStartInfo
 				{
-					Arguments = "ffmpeg",
+					Arguments = app,
 					UseShellExecute = false, 
 					RedirectStandardOutput = true,
 					CreateNoWindow = true

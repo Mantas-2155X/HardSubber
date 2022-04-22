@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using HardSubber.Enums;
 
 namespace HardSubber
 {
@@ -17,13 +18,19 @@ namespace HardSubber
 
 		public static int[] GetZenityOptions()
 		{
-			var result = new int[3];
+			var result = new [] {0, 0, 0};
 
+			if (HardSubber.zenityPath == null)
+			{
+				Log.ConsoleWrite("Zenity path not found", ELogType.Warning);
+				return result;
+			}
+			
 			var p = new Process
 			{
 				StartInfo = new ProcessStartInfo
 				{
-					FileName = "/usr/bin/zenity",
+					FileName = HardSubber.zenityPath,
 					Arguments = "--forms --title \"HardSubber\" --text \"Enter options\" --add-entry \"Subtitle Index\" --add-entry \"Audio Index\" --add-entry \"Picture Mode\"",
 					UseShellExecute = false,
 					RedirectStandardOutput = true,
@@ -43,9 +50,9 @@ namespace HardSubber
 				if (split.Length != 3)
 					return result;
 
-				result[0] = Convert.ToInt32(split[0]);
-				result[1] = Convert.ToInt32(split[1]);
-				result[2] = Convert.ToInt32(split[2]);
+				for (var i = 0; i < split.Length; i++)
+					if (split[i] != "")
+						result[i] = Convert.ToInt32(split[i]);
 			}
 			
 			return result;
