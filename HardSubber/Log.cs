@@ -23,14 +23,14 @@ namespace HardSubber
 			Console.WriteLine(text);
 			Console.ResetColor();
 		}
-
+		
 		public static void PrintHelp()
 		{
 			ConsoleWrite("Usage:", ELogType.Message);
 			ConsoleWrite("HardSubber	--help			# Show usage manual", ELogType.Message);
 			ConsoleWrite("HardSubber	--version		# Show current version of HardSubber", ELogType.Message);
 			ConsoleWrite("", ELogType.Message);
-			ConsoleWrite("HardSubber	--fix			# Fix video(s) duration", ELogType.Message);
+			ConsoleWrite("HardSubber	--fix			# Fix video(s)", ELogType.Message);
 			ConsoleWrite("", ELogType.Message);
 			ConsoleWrite("HardSubber	--hardsub		# Hardsub video(s)", ELogType.Message);
 			ConsoleWrite("		--path			# Video input path. File or directory", ELogType.Message);

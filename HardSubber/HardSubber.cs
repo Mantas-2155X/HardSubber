@@ -16,6 +16,7 @@ namespace HardSubber
 		{
 			".avi",
 			".mkv",
+			".m4v",
 			".mp4",
 		};
 
@@ -61,7 +62,6 @@ namespace HardSubber
 			}
 			
 			Console.ResetColor();
-			Console.Clear();
 		}
 		
 		private static async Task processHardsub(string[] args)
@@ -106,7 +106,7 @@ namespace HardSubber
 					case "picture":
 						picture = true;
 						break;
-					case "zenity":
+					case "zenity" when !string.IsNullOrEmpty(zenityPath):
 						var options = Tools.GetZenityOptions();
 						subStream = options[0];
 						audioStream = options[1];
@@ -264,7 +264,7 @@ namespace HardSubber
 				}
 				
 				if (outputPath == "")
-					outputPath = file.DirectoryName + "/subbed";
+					outputPath = file.DirectoryName + "/fixed";
 
 				if (!Directory.Exists(outputPath))
 					Directory.CreateDirectory(outputPath);
@@ -274,7 +274,7 @@ namespace HardSubber
 		}
 		
 		private static void hardsubFile(FileInfo file, string output, int subIndex, int audioIndex, bool picture)
-		{
+		{ // TODO: support nvidia/intel and windows for vaapi
 			Log.ConsoleWrite("Hardsubbing file " + file.Name, ELogType.Message);
 			Log.ConsoleWrite("", ELogType.Message);
 			
@@ -342,6 +342,12 @@ namespace HardSubber
 			Log.ConsoleWrite("Fixing file " + file.Name, ELogType.Message);
 			Log.ConsoleWrite("", ELogType.Message);
 			
+			var newName = file.FullName.Replace("'", "");
+			if (newName != file.FullName)
+				file.MoveTo(newName);
+
+			var shortName = file.Name.Substring(0, file.Name.Length - file.Extension.Length);
+			
 			var process = new Process
 			{
 				StartInfo = new ProcessStartInfo
@@ -356,13 +362,15 @@ namespace HardSubber
 
 			process.StartInfo.Arguments += $"-hide_banner -loglevel warning -stats ";
 			process.StartInfo.Arguments += $"-i \"{file.FullName}\" ";
+			process.StartInfo.Arguments += "-metadata title=\"" + shortName + "\" ";
+			process.StartInfo.Arguments += "-movflags faststart ";
 			process.StartInfo.Arguments += "-c copy ";
 			process.StartInfo.Arguments += $"\"{output}/{file.Name}\"";
 			
 			process.Start();
 			process.WaitForExit();
 		}
-
+		
 		private static async Task<string> getPath(string app)
 		{
 			var process = new Process
